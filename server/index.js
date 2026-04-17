@@ -7,11 +7,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔥 ПОРТ (железно работает на Railway)
+// 🔥 ПОРТ (железно для Railway)
 const PORT = process.env.PORT || 8080;
 
-// 🔥 FIREBASE (с защитой)
-let db;
+// 🔥 Firebase (без падений)
+let db = null;
 try {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_KEY)),
@@ -20,23 +20,18 @@ try {
   db = admin.database();
   console.log("Firebase OK");
 } catch (e) {
-  console.error("Firebase error:", e);
+  console.log("Firebase disabled");
 }
 
-// 🧪 тест
+// 🧪 TEST
 app.get("/", (req, res) => {
   res.send("Server работает 🚀");
 });
 
-// 🔐 Discord login
+// 🔐 DISCORD LOGIN
 app.get("/auth/discord", (req, res) => {
-  try {
-    const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}&scope=identify`;
-    res.redirect(url);
-  } catch (e) {
-    console.error(e);
-    res.send("Ошибка discord route");
-  }
+  const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}&scope=identify`;
+  res.redirect(url);
 });
 
 // 🔄 CALLBACK
@@ -44,7 +39,6 @@ app.get("/auth/callback", async (req, res) => {
   const code = req.query.code;
 
   try {
-    // 🎟 получаем токен
     const tokenRes = await axios.post(
       "https://discord.com/api/oauth2/token",
       new URLSearchParams({
@@ -55,27 +49,22 @@ app.get("/auth/callback", async (req, res) => {
         redirect_uri: process.env.REDIRECT_URI
       }),
       {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        }
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
       }
     );
 
     const token = tokenRes.data.access_token;
 
-    // 👤 получаем пользователя
     const userRes = await axios.get(
       "https://discord.com/api/users/@me",
       {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       }
     );
 
     const user = userRes.data;
 
-    // 💾 сохраняем в Firebase
+    // 💾 SAVE USER
     if (db) {
       await db.ref("users/" + user.id).set({
         access: false,
@@ -85,7 +74,7 @@ app.get("/auth/callback", async (req, res) => {
       });
     }
 
-    // 🤖 отправка approve кнопки
+    // 🤖 WEBHOOK APPROVE
     if (process.env.WEBHOOK_URL) {
       await axios.post(process.env.WEBHOOK_URL, {
         content: `Новый пользователь: ${user.username}`,
@@ -105,7 +94,7 @@ app.get("/auth/callback", async (req, res) => {
       });
     }
 
-    // 🔄 редирект обратно
+    // 🔄 REDIRECT
     res.send(`
       <script>
         localStorage.setItem("id", "${user.id}");
@@ -119,7 +108,7 @@ app.get("/auth/callback", async (req, res) => {
   }
 });
 
-// 🔍 проверка доступа
+// 🔍 ACCESS CHECK
 app.get("/check-access/:id", async (req, res) => {
   if (!db) return res.json({ access: false });
 
@@ -127,7 +116,7 @@ app.get("/check-access/:id", async (req, res) => {
   res.json({ access: snap.exists() && snap.val().access });
 });
 
-// 👤 профиль
+// 👤 PROFILE
 app.get("/user/:id", async (req, res) => {
   if (!db) return res.json(null);
 
@@ -135,7 +124,7 @@ app.get("/user/:id", async (req, res) => {
   res.json(snap.val());
 });
 
-// 🚀 запуск (ОДИН РАЗ!)
+// 🚀 START (ОДИН РАЗ!)
 app.listen(PORT, "0.0.0.0", () => {
   console.log("RUNNING ON", PORT);
 });
