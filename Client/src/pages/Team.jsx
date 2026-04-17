@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Shop from "./Shop";
-import Shop from "./Team"
+import Team from "./Team"
 import Tower from "./Tower";
 
 export default function App() {
