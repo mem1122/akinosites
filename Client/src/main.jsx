@@ -1,0 +1,8 @@
+{
+  "scripts": { "dev": "vite", "build": "vite build" },
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18",
+    "firebase": "^10"
+  }
+}
