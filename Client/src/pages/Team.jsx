@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Team from "./pages/Team";
 import Shop from "./pages/Shop";
 import Tower from "./pages/Tower";
 
