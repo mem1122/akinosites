@@ -20,8 +20,10 @@ const PORT = process.env.PORT || 3001;
 
 // 🔐 Discord login
 app.get("/auth/discord", (req, res) => {
-  const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}&scope=identify`;
-  res.redirect(url);
+  console.log("CLIENT_ID:", process.env.CLIENT_ID);
+  console.log("REDIRECT_URI:", process.env.REDIRECT_URI);
+
+  res.redirect("https://discord.com");
 });
 
 // 🔄 CALLBACK (твой код)
