@@ -1,47 +1,27 @@
 import React from "react";
-import { useEffect, useState } from "react";
-import Shop from "./Shop";
-import Team from "./Team"
-import Tower from "./Tower";
+import { ui } from "../styles";
 
-export default function App() {
-  const [tab, setTab] = useState("team");
-  const [access, setAccess] = useState(false);
-  const [userId, setUserId] = useState("");
-
-  useEffect(() => {
-    const id = localStorage.getItem("id");
-    if (id) {
-      setUserId(id);
-      checkAccess(id);
-    }
-  }, []);
-
-  const checkAccess = async (id) => {
-    const res = await fetch(`http://localhost:3001/check-access/${id}`);
-    const data = await res.json();
-    if (data.access) setAccess(true);
-  };
-
-  if (!access) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-black text-white">
-        <button onClick={()=>window.location.href="http://localhost:3001/auth/discord"}>
-          Войти через Discord
-        </button>
-      </div>
-    );
-  }
-
+export default function Team() {
   return (
     <div>
-      <button onClick={()=>setTab("team")}>Состав</button>
-      <button onClick={()=>setTab("shop")}>Shop</button>
-      <button onClick={()=>setTab("tower")}>Вышка</button>
-
-      {tab==="team" && <Team />}
-      {tab==="shop" && <Shop userId={userId} />}
-      {tab==="tower" && <Tower role="admin" />}
+      <h1>Команда</h1>
+      <div style={{display:"flex",gap:20}}>
+        {["Admin","Dev","Designer"].map((u,i)=>(
+          <div key={i} style={ui.card}>
+            <div style={avatar}></div>
+            <h3>{u}</h3>
+            <p style={{opacity:0.6}}>Member</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+
+const avatar = {
+  width:50,
+  height:50,
+  borderRadius:"50%",
+  background:"linear-gradient(135deg,#6366f1,#a855f7)",
+  marginBottom:10
+};

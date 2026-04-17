@@ -1,32 +1,42 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { ui } from "./styles";
 import Team from "./pages/Team";
 import Shop from "./pages/Shop";
 import Tower from "./pages/Tower";
 
 export default function App() {
+  const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("team");
   const [access, setAccess] = useState(false);
-  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     const id = localStorage.getItem("id");
-    if (id) {
-      setUserId(id);
-      checkAccess(id);
-    }
+    if (id) checkAccess(id);
   }, []);
 
   const checkAccess = async (id) => {
-    const res = await fetch(`https://akinosites-production.up.railway.app/check-access/${id}`);
-    const data = await res.json();
-    if (data.access) setAccess(true);
-  };
+  const res = await fetch(`https://akinosites-production.up.railway.app/check-access/${id}`);
+  const data = await res.json();
+
+  if (data.access) {
+    setAccess(true);
+
+    const userRes = await fetch(`https://akinosites-production.up.railway.app/user/${id}`);
+    const userData = await userRes.json();
+    setProfile(userData);
+  }
+};
 
   if (!access) {
     return (
-      <div className="h-screen flex items-center justify-center bg-black text-white">
-        <button onClick={()=>window.location.href="https://akinosites-production.up.railway.app/auth/discord"}>
+      <div style={center}>
+        <button
+          style={ui.button}
+          onClick={() =>
+            (window.location.href =
+              "https://akinosites-production.up.railway.app/auth/discord")
+          }
+        >
           Войти через Discord
         </button>
       </div>
@@ -34,14 +44,62 @@ export default function App() {
   }
 
   return (
+    <div style={{ ...app, background: ui.bg }}>
+    {profile && (
+  <div style={{
+    position: "absolute",
+    top: 20,
+    right: 20,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    background: "rgba(255,255,255,0.05)",
+    padding: "8px 12px",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)"
+  }}>
+    <img
+      src={profile.avatar}
+      width={40}
+      height={40}
+      style={{
+        borderRadius: "50%",
+        border: "2px solid #6366f1"
+      }}
+    />
     <div>
-      <button onClick={()=>setTab("team")}>Состав</button>
-      <button onClick={()=>setTab("shop")}>Shop</button>
-      <button onClick={()=>setTab("tower")}>Вышка</button>
+      <div style={{ fontWeight: "bold" }}>
+        {profile.username}
+      </div>
+      <div style={{ fontSize: 12, opacity: 0.6 }}>
+        {profile.role}
+      </div>
+    </div>
+  </div>
+)}
+      <div style={sidebar}>
+        <h2>AKINO</h2>
+        <button style={ui.navBtn} onClick={()=>setTab("team")}>👥</button>
+        <button style={ui.navBtn} onClick={()=>setTab("shop")}>🛒</button>
+        <button style={ui.navBtn} onClick={()=>setTab("tower")}>⚙</button>
+      </div>
 
-      {tab==="team" && <Team />}
-      {tab==="shop" && <Shop userId={userId} />}
-      {tab==="tower" && <Tower role="admin" />}
+      <div style={content}>
+        {tab==="team" && <Team />}
+        {tab==="shop" && <Shop />}
+        {tab==="tower" && <Tower />}
+      </div>
     </div>
   );
 }
+
+const app = { display:"flex", height:"100vh", color:"white" };
+const sidebar = { width:220, padding:20, display:"flex", flexDirection:"column", gap:10 };
+const content = { flex:1, padding:30 };
+const center = {
+  height:"100vh",
+  display:"flex",
+  justifyContent:"center",
+  alignItems:"center",
+  background:"#020617"
+};

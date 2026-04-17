@@ -1,63 +1,79 @@
 import express from "express";
+import admin from "firebase-admin";
 import axios from "axios";
 import cors from "cors";
+
+admin.initializeApp({
+  credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_KEY)),
+  databaseURL: process.env.FIREBASE_DB
+});
+
+const db = admin.database();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+const PORT = process.env.PORT || 3001;
+
 const access = {};
 
-app.get("/check-access/:id",(req,res)=>{
-  res.json({ access: access[req.params.id] || false });
+// проверка доступа
+app.get("/check-access/:id", async (req, res) => {
+  const userSnap = await db.ref("users/" + req.params.id).get();
+  const configSnap = await db.ref("config").get();
+
+  const user = userSnap.val();
+  const config = configSnap.val();
+
+  if (!user) return res.json({ access: false });
+
+  if (config?.closeMode && user.role !== "admin") {
+    return res.json({ access: false });
+  }
+
+  res.json({ access: user.access });
 });
 
-// 🔐 Discord login
+// Discord login
 app.get("/auth/discord", (req, res) => {
-  const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${process.env.REDIRECT_URI}&scope=identify`;
+  const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}&scope=identify`;
   res.redirect(url);
 });
 
-app.post("/buy",async(req,res)=>{
-  const item=req.body;
-  await axios.post("WEBHOOK_URL",{
-    content:`Покупка: ${item.name}`
-  });
-  res.json({ok:true});
+// callback
+const user = userRes.data;
+
+await db.ref("users/" + user.id).set({
+  access: false,
+  role: "user",
+  username: user.username,
+  avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
 });
 
-app.listen(3001);
-app.get("/auth/callback", async (req, res) => {
-  const code = req.query.code;
-
-  try {
-    const tokenRes = await axios.post(
-      "https://discord.com/api/oauth2/token",
-      new URLSearchParams({
-        client_id: process.env.CLIENT_ID,
-        client_secret: process.env.CLIENT_SECRET,
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: process.env.REDIRECT_URI
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+// отправка в Discord (approve кнопка)
+await axios.post(process.env.WEBHOOK_URL, {
+  content: `Новый пользователь: ${user.username}`,
+  components: [
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          label: "Approve",
+          style: 3,
+          custom_id: `approve_${user.id}`
         }
-      }
-    );
-
-    const token = tokenRes.data.access_token;
-
-    const userRes = await axios.get("https://discord.com/api/users/@me", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    const user = userRes.data;
-
-    access[user.id] = true;
+      ]
+    }
+  ]
+});    // 🔥 СОХРАНЯЕМ В FIREBASE
+    await db.ref("users/" + user.id).set({
+  access: false, // ❗ теперь нужен approve
+  role: "user",
+  username: user.username,
+  avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+});
 
     res.send(`
       <script>
@@ -70,3 +86,5 @@ app.get("/auth/callback", async (req, res) => {
     res.send("Ошибка авторизации");
   }
 });
+
+app.listen(PORT, () => console.log("Server running"));
