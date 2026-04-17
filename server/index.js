@@ -1,3 +1,4 @@
+console.log("SERVER START");
 import express from "express";
 import axios from "axios";
 import cors from "cors";
@@ -115,3 +116,4 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => console.log("Server running"));
+app.listen(PORT, () => console.log("RUNNING"));
