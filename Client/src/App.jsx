@@ -17,7 +17,7 @@ export default function App() {
   }, []);
 
   const checkAccess = async (id) => {
-    const res = await fetch(`http://localhost:3001/check-access/${id}`);
+    const res = await fetch(`akinosites-production.up.railway.app`);
     const data = await res.json();
     if (data.access) setAccess(true);
   };
