@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import Shop from "./pages/Shop";
-import Tower from "./pages/Tower";
+import Shop from "./Shop";
+import Shop from "./Team"
+import Tower from "./Tower";
 
 export default function App() {
   const [tab, setTab] = useState("team");
