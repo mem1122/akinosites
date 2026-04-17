@@ -17,7 +17,7 @@ export default function App() {
   }, []);
 
   const checkAccess = async (id) => {
-    const res = await fetch(`akinosites-production.up.railway.app`);
+    const res = await fetch(`https://akinosites-production.up.railway.app/check-access/${id}`);
     const data = await res.json();
     if (data.access) setAccess(true);
   };
@@ -25,7 +25,7 @@ export default function App() {
   if (!access) {
     return (
       <div className="h-screen flex items-center justify-center bg-black text-white">
-        <button onClick={()=>window.location.href="http://localhost:3001/auth/discord"}>
+        <button onClick={()=>window.location.href="https://akinosites-production.up.railway.app/auth/discord"}>
           Войти через Discord
         </button>
       </div>
