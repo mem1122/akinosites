@@ -1,29 +1,32 @@
-import {
-  Client,
-  GatewayIntentBits,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
-} from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
+import admin from "firebase-admin";
+
+admin.initializeApp({
+  credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_KEY)),
+  databaseURL: process.env.FIREBASE_DB
+});
+
+const db = admin.database();
 
 const client = new Client({
-  intents:[GatewayIntentBits.Guilds]
+  intents: [GatewayIntentBits.Guilds]
 });
 
-client.once("ready",()=>console.log("bot ready"));
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isButton()) return;
 
-client.on("interactionCreate", async interaction=>{
-  if(!interaction.isButton()) return;
+  if (interaction.customId.startsWith("approve_")) {
+    const userId = interaction.customId.split("_")[1];
 
-  const [action,id]=interaction.customId.split("_");
+    await db.ref("users/" + userId).update({
+      access: true
+    });
 
-  if(action==="approve"){
-    await interaction.reply({content:`✅ ${id}`,ephemeral:true});
-  }
-
-  if(action==="deny"){
-    await interaction.reply({content:`❌ ${id}`,ephemeral:true});
+    await interaction.reply({
+      content: "✅ Пользователь одобрен",
+      ephemeral: true
+    });
   }
 });
 
-client.login("TOKEN");
+client.login(process.env.TOKEN);
