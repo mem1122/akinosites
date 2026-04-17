@@ -1,8 +1,9 @@
-{
-  "scripts": { "dev": "vite", "build": "vite build" },
-  "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
-    "firebase": "^10"
-  }
-}
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
