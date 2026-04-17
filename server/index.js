@@ -4,18 +4,20 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
+// ❗ ВАЖНО: только так для Railway
+const PORT = process.env.PORT;
 
-// тест
+// тест главной
 app.get("/", (req, res) => {
-  res.send("OK");
+  res.send("Server работает 🚀");
 });
 
-// тест discord route
+// тест discord (пока без env — чтобы убедиться что всё ок)
 app.get("/auth/discord", (req, res) => {
   res.redirect("https://discord.com");
 });
 
-app.listen(PORT, () => {
+// запуск (ОДИН раз!)
+app.listen(PORT, "0.0.0.0", () => {
   console.log("RUNNING ON", PORT);
 });
