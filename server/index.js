@@ -1,33 +1,35 @@
-console.log("SERVER START");
 import express from "express";
 import axios from "axios";
 import cors from "cors";
 import admin from "firebase-admin";
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-// 🔥 Firebase
-admin.initializeApp({
-  credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_KEY)),
-  databaseURL: process.env.FIREBASE_DB
-});
-
-const db = admin.database();
-
+// 🔥 PORT (ВАЖНО для Railway)
 const PORT = process.env.PORT || 3001;
+
+// 🔥 Firebase (с защитой от краша)
+let db;
+try {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_KEY)),
+    databaseURL: process.env.FIREBASE_DB
+  });
+  db = admin.database();
+  console.log("Firebase OK");
+} catch (e) {
+  console.error("Firebase error:", e);
+}
 
 // 🔐 Discord login
 app.get("/auth/discord", (req, res) => {
-  console.log("CLIENT_ID:", process.env.CLIENT_ID);
-  console.log("REDIRECT_URI:", process.env.REDIRECT_URI);
-
-  res.redirect("https://discord.com");
+  const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}&scope=identify`;
+  res.redirect(url);
 });
 
-// 🔄 CALLBACK (твой код)
+// 🔄 Callback
 app.get("/auth/callback", async (req, res) => {
   const code = req.query.code;
 
@@ -61,6 +63,7 @@ app.get("/auth/callback", async (req, res) => {
 
     const user = userRes.data;
 
+    // 💾 сохраняем пользователя
     await db.ref("users/" + user.id).set({
       access: false,
       role: "user",
@@ -68,6 +71,7 @@ app.get("/auth/callback", async (req, res) => {
       avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
     });
 
+    // 🤖 отправка approve кнопки
     await axios.post(process.env.WEBHOOK_URL, {
       content: `Новый пользователь: ${user.username}`,
       components: [
@@ -98,22 +102,24 @@ app.get("/auth/callback", async (req, res) => {
   }
 });
 
-// 🔍 check access
+// 🔍 проверка доступа
 app.get("/check-access/:id", async (req, res) => {
   const snap = await db.ref("users/" + req.params.id).get();
   res.json({ access: snap.exists() && snap.val().access });
 });
 
-// 👤 user
+// 👤 профиль
 app.get("/user/:id", async (req, res) => {
   const snap = await db.ref("users/" + req.params.id).get();
   res.json(snap.val());
 });
 
-// тест
+// 🧪 тест
 app.get("/", (req, res) => {
   res.send("Server работает 🚀");
 });
 
-app.listen(PORT, () => console.log("Server running"));
-app.listen(PORT, () => console.log("RUNNING"));
+// 🚀 запуск (ОДИН РАЗ!!!)
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
+});
