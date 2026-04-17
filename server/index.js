@@ -1,3 +1,30 @@
+import express from "express";
+import axios from "axios";
+import cors from "cors";
+import admin from "firebase-admin";
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// 🔥 Firebase
+admin.initializeApp({
+  credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_KEY)),
+  databaseURL: process.env.FIREBASE_DB
+});
+
+const db = admin.database();
+
+const PORT = process.env.PORT || 3001;
+
+// 🔐 Discord login
+app.get("/auth/discord", (req, res) => {
+  const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}&scope=identify`;
+  res.redirect(url);
+});
+
+// 🔄 CALLBACK (твой код)
 app.get("/auth/callback", async (req, res) => {
   const code = req.query.code;
 
@@ -67,3 +94,22 @@ app.get("/auth/callback", async (req, res) => {
     res.send("Ошибка авторизации");
   }
 });
+
+// 🔍 check access
+app.get("/check-access/:id", async (req, res) => {
+  const snap = await db.ref("users/" + req.params.id).get();
+  res.json({ access: snap.exists() && snap.val().access });
+});
+
+// 👤 user
+app.get("/user/:id", async (req, res) => {
+  const snap = await db.ref("users/" + req.params.id).get();
+  res.json(snap.val());
+});
+
+// тест
+app.get("/", (req, res) => {
+  res.send("Server работает 🚀");
+});
+
+app.listen(PORT, () => console.log("Server running"));
