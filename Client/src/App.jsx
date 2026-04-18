@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { ui } from "./styles";
 
@@ -6,6 +7,7 @@ export default function App() {
 
   useEffect(() => {
     const id = localStorage.getItem("id");
+
     if (!id) {
       setAccess(false);
       return;
@@ -41,14 +43,23 @@ export default function App() {
 
   // ✅ есть доступ
   return (
-    <div style={{ ...app, background: ui.bg }}>
+    <div style={{ ...appStyle, background: ui.bg }}>
       <Sidebar />
       <Content />
     </div>
   );
 }
 
-const app = {
+// ⚠️ заглушки (чтобы не было ошибок)
+function Sidebar() {
+  return <div style={{ width: 200 }}>Sidebar</div>;
+}
+
+function Content() {
+  return <div>Content</div>;
+}
+
+const appStyle = {
   display: "flex",
   height: "100vh",
   color: "white"
