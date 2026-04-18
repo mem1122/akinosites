@@ -1,5 +1,10 @@
 {
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js"
+  },
   "dependencies": {
-    "discord.js": "^14"
+    "discord.js": "^14",
+    "@supabase/supabase-js": "^2"
   }
 }
