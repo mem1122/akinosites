@@ -1,7 +1,10 @@
+
 import express from "express";
 import axios from "axios";
 import cors from "cors";
 import supabase from "./supabase.js";
+
+console.log("SERVER FILE STARTED");
 
 const app = express();
 app.use(cors());
@@ -95,6 +98,7 @@ app.post("/tower/:id", async (req, res) => {
   res.send("ok");
 });
 
+console.log("BEFORE LISTEN");
 app.listen(PORT, "0.0.0.0", () => {
   console.log("RUNNING ON", PORT);
 });
