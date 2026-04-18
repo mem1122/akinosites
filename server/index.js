@@ -9,9 +9,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔥 ВАЖНО: только так
 const PORT = process.env.PORT;
 
+if (!PORT) {
+  throw new Error("PORT not defined");
+}
+
+console.log("PORT =", PORT);
+
+// healthcheck
 app.get("/", (req, res) => {
   res.send("OK");
 });
@@ -64,7 +70,7 @@ app.get("/auth/callback", async (req, res) => {
     `);
 
   } catch (err) {
-    console.error(err);
+    console.error("OAUTH ERROR:", err);
     res.status(500).send("OAuth error");
   }
 });
