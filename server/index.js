@@ -1,4 +1,3 @@
-
 import express from "express";
 import axios from "axios";
 import cors from "cors";
@@ -12,6 +11,11 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 
+// ✅ ОБЯЗАТЕЛЬНО (для Railway)
+app.get("/", (req, res) => {
+  res.send("OK");
+});
+
 // 🔐 login
 app.get("/auth/discord", (req, res) => {
   const url = `https://discord.com/oauth2/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(process.env.REDIRECT_URI)}&scope=identify`;
@@ -20,43 +24,49 @@ app.get("/auth/discord", (req, res) => {
 
 // 🔄 callback
 app.get("/auth/callback", async (req, res) => {
-  const code = req.query.code;
+  try {
+    const code = req.query.code;
 
-  const tokenRes = await axios.post(
-    "https://discord.com/api/oauth2/token",
-    new URLSearchParams({
-      client_id: process.env.CLIENT_ID,
-      client_secret: process.env.CLIENT_SECRET,
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: process.env.REDIRECT_URI
-    }),
-    { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-  );
+    const tokenRes = await axios.post(
+      "https://discord.com/api/oauth2/token",
+      new URLSearchParams({
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: process.env.REDIRECT_URI
+      }),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
 
-  const token = tokenRes.data.access_token;
+    const token = tokenRes.data.access_token;
 
-  const userRes = await axios.get(
-    "https://discord.com/api/users/@me",
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+    const userRes = await axios.get(
+      "https://discord.com/api/users/@me",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-  const user = userRes.data;
+    const user = userRes.data;
 
-  await supabase.from("users").upsert({
-    id: user.id,
-    username: user.username,
-    avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
-    role: "user",
-    access: false
-  });
+    await supabase.from("users").upsert({
+      id: user.id,
+      username: user.username,
+      avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
+      role: "user",
+      access: false
+    });
 
-  res.send(`
-    <script>
-      localStorage.setItem("id", "${user.id}");
-      window.location.href = "https://akinosites-steel.vercel.app/";
-    </script>
-  `);
+    res.send(`
+      <script>
+        localStorage.setItem("id", "${user.id}");
+        window.location.href = "https://akinosites-steel.vercel.app/";
+      </script>
+    `);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("OAuth error");
+  }
 });
 
 // 🔍 access
@@ -99,6 +109,7 @@ app.post("/tower/:id", async (req, res) => {
 });
 
 console.log("BEFORE LISTEN");
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log("RUNNING ON", PORT);
 });
