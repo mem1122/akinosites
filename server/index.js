@@ -9,9 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 8080;
+// 🔥 ВАЖНО: только так
+const PORT = process.env.PORT;
 
-// ✅ ОБЯЗАТЕЛЬНО (для Railway)
 app.get("/", (req, res) => {
   res.send("OK");
 });
